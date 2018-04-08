@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+.node {
+  cursor: pointer;
+}
+
+.node circle {
+    fill: #F5834D;
+    stroke: #f0fc00;
+    stroke-width: 1.5px;
+}
+
+.node text {
+  font: 13px ;
+  fill: white;
+  font-family: "Times New Roman";
+}
+
+ path.link {
+        fill: none;
+        stroke: #ccc;
+        stroke-width: 1.5px;
+      }
+
+path.highlight {
+         stroke:  #92ec00;
+        animation-fill-mode: forwards;
+      }
+  .test{
+    fill:orange;
+  }
+
+</style>
+<body style="background: #1a1a1a;">
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script>
+
+var margin = {top: 20, right: 100, bottom: 20, left: 120},
+    width = 1000 - margin.right - margin.left,
+    height = 2000 - margin.top - margin.bottom;
+
+var i = 0,
+    duration = 700,
+    root;
+
+var tree = d3.layout.tree()
+    .size([height, width]);
+
+var diagonal = d3.svg.diagonal()
+    .projection(function(d) { return [d.y, d.x]; });//not needed
+
+var svg = d3.select("body").append("svg")
+    .attr("background","#4682B4")
+    .attr("width", (width+1000) + margin.right + margin.left)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+d3.json("output.json", function(error, flare) {
+  if (error) throw error;
+
+  value = new Array();
+  maxValues = new Array();
+  minValues = new Array();
+  console.log(flare)
+  for(i = 0 ; i<flare.children.length ;i++ ){
+      tempi = flare.children[i]
+    for (j = 0 ; j<tempi.children.length ; j++ ){
+       tempj = tempi.children[j];
+        for (k = 0 ; k<tempj.children.length ;k++ ){
+        tempk = tempj.children[k]    
+        for (l = 0 ; l<tempk.children.length ;l++ ){
+            value.push(parseInt(tempk.children[l].name.split(":")[1]));
+        }
+      }
+        
+    }
+  }
+//console.log(value.length)
+for(a = 0 ; a< 6;a++){
+  maxValues.push(Math.max.apply(null, value));
+  minValues.push(Math.min.apply(null, value));
+  console.log(value.indexOf())
+  temp1 = Math.max.apply(null, value);
+  temp2 = Math.min.apply(null, value);
+  value.splice(value.indexOf(temp1), 1);
+  value.splice(value.indexOf(temp2), 1);
+}
+ // console.log( maxValues);
+ // console.log( minValues);
+
+
+  root = flare;
+  root.x0 = height / 2;
+  root.y0 = 10;
+
+  function collapse(d) {//something can be done
+    if (d.children) {
+      d._children = d.children;
+      d._children.forEach(collapse);
+      d.children = null;
+    }
+
+  }
+
+  root.children.forEach(collapse);
+  update(root);
+});
+
+d3.select(self.frameElement).style("height", "1000px");
+
+function update(source) {
+
+  // Compute the new tree layout.
+  var nodes = tree.nodes(root).reverse(),
+      links = tree.links(nodes);
+
+  // Normalize for fixed-depth.
+  nodes.forEach(function(d) { d.y = d.depth * 360; });// distanse between parent and child
+
+  // Update the nodes…
+  var node = svg.selectAll("g.node")
+      .data(nodes, function(d) { return d.id || (d.id = ++i); });
+
+  // Enter any new nodes at the parent's previous position.
+  var nodeEnter = node.enter().append("g")
+      .attr("class", function(d){
+        if(d.depth ==4){
+          return "node test";
+        }
+        return "node";
+      })
+      .attr("transform", function(d) { return "translate(" + source.y0 + "," + source.x0 + ")"; })
+      .on("click", click);
+
+  nodeEnter.append("circle")
+      .attr("r", 1e-6);
+      
+    
+ 
+  nodeEnter.append("text")
+ .attr("x", -70)
+ .attr("dy",  -35)
+ .text("Total Number of Jobs")
+ .style("fill-opacity",function(d) {
+ if(d.size){
+  pulsate(d3.select(this))
+  return 1;
+
+ } 
+ return 0;
+});
+
+
+  nodeEnter.append("text")
+      .attr("x", function(d) { 
+        if(d.size != undefined) {
+          return (7.5);
+        }else{
+          return d.children || d._children ? -5 : 10; 
+        }})
+      .attr("dy",  function(d) { 
+        if(d.size != undefined) {
+          return (6);
+        }else{
+          return (0); 
+        }
+      })
+      .attr("text-anchor", function(d) { 
+        if(d.size != undefined) {
+          return ("end");
+        }else{
+          return "end";
+        }
+        })
+      .text(function(d) { 
+        if(d.size){
+          console.log(d.name.split(":"))
+          return d.name.split(":")[1];
+        }
+        return d.name})
+      .style("font-size", function(d) { 
+        if(d.size){
+          return "20px";
+        }})
+      .style("fill-opacity", 1);
+
+  // Transition nodes to their new position.
+  var nodeUpdate = node.transition()
+      .duration(duration)
+      .attr("transform", function(d) { return "translate(" + (d.y) + "," + (d.x) + ")"; });
+
+  nodeUpdate.select("circle")
+      .attr("r", function(d){
+        if(d.depth ==0){
+          return  "3"
+        }
+
+        if(d.depth ==1){
+          return  "6"
+        }
+         if(d.depth ==2){
+          return  "12"
+        }
+         if(d.depth ==3){
+          return  "16"
+        }
+        if(d.depth ==4){
+
+          return  "30"
+        }
+
+      })
+      .style("fill", function(d){
+
+        console.log(d.dept)
+
+        if(d.depth ==0){
+          return  "#f8e6fe"
+        }
+
+        if(d.depth ==1){
+          return  "#e19bfd"
+        }
+         if(d.depth ==2){
+          return  "#c337fb"
+        }
+         if(d.depth ==3){
+          return  "#a205e1"
+        }
+        if(d.depth ==4){
+          return  "#50026e"
+        }
+      }
+      ).duration(2500);
+
+
+  // nodeUpdate.select("#fillgauge4")
+  //     .style("fill-opacity", 1);
+
+  // Transition exiting nodes to the parent's new position.
+  var nodeExit = node.exit().transition()
+      .duration(duration)
+      .attr("transform", function(d) { return "translate(" + source.y + "," + source.x + ")"; })
+      .remove();
+
+  nodeExit.select("circle")
+      .attr("r", 1e-6);
+
+  // nodeExit.select("#fillgauge4")
+  //     .style("fill-opacity", 1);
+
+  // Update the links…
+  var link = svg.selectAll("path.link")
+      .data(links, function(d) { return d.target.id; });
+
+      ///
+link.enter().insert("svg:path", "g").attr("class", function(d) {
+    return "link source-" + d.source.name + " target-" + d.target.name;
+
+  }).classed("highlight",function(d){
+    if(d.target.children||d.target.size){
+      return true
+    }
+  })
+.attr("d", function(d) {
+    var o;
+    o = {
+      x: source.x0,
+      y: source.y0
+    };
+    return diagonal({
+      source: o,
+      target: o
+    });
+  }).transition().duration(duration).attr("d", diagonal);
+  link.transition().duration(duration).attr("d", diagonal);
+  link.exit().transition().duration(duration).attr("d", function(d) {
+    var o;
+    o = {
+      x: source.x,
+      y: source.y
+    };
+    return diagonal({
+      source: o,
+      target: o
+    });
+  }).remove();
+  return nodes.forEach(function(d) {
+    d.x0 = d.x;
+    return d.y0 = d.y;
+  });
+
+
+};
+
+
+
+//hightlighting
+highlightOn = function(d) {
+  var parentLine;
+  parentLine = function(d) {
+    if (d.parent) {
+      parentLine(d.parent);
+     a = svg.selectAll("path.link");
+      for (var i = 0; i < a[0].length; i++) {
+        if(a[0][i].__data__.source.name == d.parent.name && a[0][i].__data__.target.name == d.name ){
+          d3.select(a[0][i]).classed('highlight', true);
+          if(a[0][i].__data__.target.depth==3){
+
+         }
+        }
+}
+    }
+  };
+  parentLine(d);
+  return update(d);
+};
+
+highlightOff = function(d) {
+  svg.selectAll("path.link").classed('highlight', false);
+  svg.selectAll("circles").classed("test","true");
+  return update(d);
+};
+
+// Toggle children on click.
+function click(d) {
+
+  if (d3.event.metaKey) {
+      highlightOn(d);
+    } else {
+      highlightOff(d);
+      highlightOn(d);
+    }
+  if (d.children) {
+    d._children = d.children;
+    d.children = null;
+  } else {
+    d.children = d._children;
+    d._children = null;
+  }
+  update(d);
+}
+
+/// Blink
+// a = svg.selectAll("circle");
+// console.log(a);
+// a.each(function(d){
+//    console.log("inside")
+//         if(d.depth==4){
+//           pulsate(d3.select(this))
+//         }
+//       })
+
+function pulsate(selection) {
+   console.log("inside")
+    recursive_transitions();
+
+    function recursive_transitions() {
+      console.log(selection.data()[0])
+      if (selection.data()[0].size) {
+         console.log("inside")
+        selection.transition()
+            .duration(400)
+            .attr("stroke-width", 2)
+            .attr("r", 32)
+            .ease('sin-in')
+            .transition()
+            .duration(800)
+            .attr('stroke-width', 3)
+            .attr("r", 12)
+            .ease('bounce-in')
+            .each("end", recursive_transitions);
+      } 
+      else {
+        // transition back to normal
+        selection.transition()
+            .duration(200)
+            .attr("r", 8)
+            .attr("stroke-width", 2)
+            .attr("stroke-dasharray", "1, 0");
+      }
+    }
+  }
+
+
+
+</script>
